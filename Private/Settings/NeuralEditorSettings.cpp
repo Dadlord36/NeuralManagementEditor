@@ -5,6 +5,7 @@
 
 #define LOCTEXT_NAMESPACE "NeuralEditor"
 
+
 FName UNeuralEditorSettings::GetSectionName() const
 {
 	return "Neural Editor";
@@ -18,9 +19,26 @@ FText UNeuralEditorSettings::GetSectionDescription() const
 TWeakObjectPtr<const USlateWidgetStyleAsset> UNeuralEditorSettings::LoadAndGetTexBlockStyleAsset(
 	const TSoftObjectPtr<USlateWidgetStyleAsset>& Asset) const
 {
-	const auto Index = LoadedStyles.AddUnique(Asset.LoadSynchronous());
-	checkf(LoadedStyles[Index], TEXT("Asset was not loaded for some reason"))
-	return LoadedStyles[Index];
+	return Asset.LoadSynchronous();
+}
+
+TWeakObjectPtr<const USlateWidgetStyleAsset> UNeuralEditorSettings::LoadAndGetTexBlockStyleAsset(const FSoftObjectPath& Asset) const
+{
+	UObject* LoadedAsset = Asset.ResolveObject();
+	if (LoadedAsset == nullptr)
+	{
+		LoadedAsset = Asset.TryLoad();
+	}
+
+	const USlateWidgetStyleAsset* SlateAsset = Cast<USlateWidgetStyleAsset>(LoadedAsset);
+	if (SlateAsset == nullptr)
+	{
+		// Log an error
+		UE_LOG(LogTemp, Error, TEXT("Asset could not be loaded or is not a USlateWidgetStyleAsset"));
+		return nullptr;
+	}
+
+	return MakeWeakObjectPtr(SlateAsset);
 }
 
 #undef LOCTEXT_NAMESPACE
